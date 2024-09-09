@@ -1,2 +1,2 @@
 # unnamed.compiler
-A simple compiler written in c
+A simple compiler written in rust
