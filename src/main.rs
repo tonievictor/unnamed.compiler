@@ -11,18 +11,24 @@ fn main() {
         exit(1);
     }
 
-    let file: String;
+    let file_content: String;
     match fs::read_to_string(&args[1]) {
         Ok(f) => {
-            file = f;
+            file_content = f;
         },
         Err(err) => {
             println!("{}", err);
             exit(1);
         }
     }
-    let tokens = lexer::tokenize(file);
-    dbg!(tokens);
+    let tokens = lexer::tokenize(file_content);
+    match tokens {
+        Some(t) => {dbg!(t);}
+        None => {
+            println!("Empty file");
+            exit(1);
+        }
+    }
 
     if args.len() > 2 {
         match args[2].as_str() {
