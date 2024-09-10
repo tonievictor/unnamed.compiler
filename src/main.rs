@@ -17,15 +17,7 @@ fn main() {
             file_content = f;
         },
         Err(err) => {
-            println!("{}", err);
-            exit(1);
-        }
-    }
-    let tokens = lexer::tokenize(file_content);
-    match tokens {
-        Some(t) => {dbg!(t);}
-        None => {
-            println!("Empty file");
+            eprintln!("ERROR {}:{}", &args[1], err);
             exit(1);
         }
     }
@@ -33,7 +25,18 @@ fn main() {
     if args.len() > 2 {
         match args[2].as_str() {
             "--lex" => {
-                println!("Lexing mode");
+                let tokens = lexer::tokenize(file_content);
+                match tokens {
+                    Ok(Some(_)) => {}
+                    Ok(None) => {
+                        println!("Empty file");
+                        exit(1);
+                    }
+                    Err(err) => {
+                        eprintln!("ERROR {}:{}", &args[1], err);
+                        exit(1);
+                    }
+                }
                 exit(0);
             }
             "--parse" => {
@@ -48,6 +51,19 @@ fn main() {
                 println!("Invalid mode");
                 exit(0);
             }
+        }
+    }
+
+    let tokens = lexer::tokenize(file_content);
+    match tokens {
+        Ok(Some(t)) => {dbg!(t);}
+        Ok(None) => {
+            println!("Empty file");
+            exit(1);
+        }
+        Err(err) => {
+            eprintln!("ERROR {}:{}", &args[1], err);
+            exit(1);
         }
     }
 

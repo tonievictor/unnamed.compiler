@@ -13,6 +13,8 @@ pub enum TokenType {
     Plus,
     Minus,
     Divide,
+    Comma,
+    Equal,
     Multiply,
     Modulo,
     Illegal,
@@ -26,7 +28,7 @@ pub struct Token {
     pub col_num: u32,
 }
 
-pub fn tokenize(file_content: String) -> Option<Vec<Token>> {
+pub fn tokenize(file_content: String) -> Result<Option<Vec<Token>>, String> {
     let mut tokens: Vec<Token> = Vec::new();
     let mut line = 1;
     let mut col = 0;
@@ -54,6 +56,8 @@ pub fn tokenize(file_content: String) -> Option<Vec<Token>> {
                     '*' => { token = create_token(TokenType::Multiply, String::from(c), line, col); }
                     '%' => { token = create_token(TokenType::Modulo, String::from(c), line, col); }
                     ';' => { token = create_token(TokenType::SemiColon, String::from(c), line, col); }
+                    ',' => { token = create_token(TokenType::Comma, String::from(c), line, col); }
+                    '=' => { token = create_token(TokenType::Equal, String::from(c), line, col); }
                     ' ' | '\t' => {
                         continue;
                     }
@@ -68,15 +72,21 @@ pub fn tokenize(file_content: String) -> Option<Vec<Token>> {
                             token = create_token(TokenType::Identifier, tok, line, col);
                             col = col + i;
                         } else if c.is_ascii_digit() {
-                            i = i + 1;
                             let mut tok = String::from(c);
                             while let Some(t) = chars.next_if(|&x| x.is_ascii_digit()) {
+                                i = i + 1;
                                 tok.push(t);
+                            }
+
+                            if let Some(next_char) = chars.peek() {
+                                if next_char.is_ascii_alphabetic() {
+                                    return Err(String::from(format!("{}:{}: invalid suffix on integer constant", line, col)));
+                                }
                             }
                             token = create_token(TokenType::Constant, tok, line, col);
                             col = col + i;
                         } else {
-                            token = create_token(TokenType::Illegal, String::from(c), line, col)
+                            return Err(String::from(format!("{}:{}: Illegal character in program", line, col)));
                         }
                     }
                 }
@@ -85,10 +95,11 @@ pub fn tokenize(file_content: String) -> Option<Vec<Token>> {
             None => { break; }
         }
     }
+
     if tokens.is_empty() {
-        return None;
+        return Ok(None);
     }
-    return Some(tokens);
+    return Ok(Some(tokens));
 }
 
 fn create_token(tok_type: TokenType, literal: String, line: u32, col: u32) -> Token {
