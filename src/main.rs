@@ -1,14 +1,30 @@
 use std::env;
 use std::fs;
 use std::process::exit;
+use crate::lexer::Token;
 
 pub mod lexer;
+pub mod parser;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
     if args.len() < 2 || args.len() > 3 {
         println!("Usage {0} <OPTIONS>", &args[0]);
         exit(1);
+    }
+
+    let mut option = "";
+
+    if args.len() > 2 {
+        match args[2].as_str() {
+            "--lex" | "--codegen" | "--parse" => {
+                option = args[2].as_str();
+            }
+            _ => {
+                eprintln!("Invalid mode");
+                exit(0);
+            }
+        }
     }
 
     let file_content: String;
@@ -22,43 +38,12 @@ fn main() {
         }
     }
 
-    if args.len() > 2 {
-        match args[2].as_str() {
-            "--lex" => {
-                let tokens = lexer::tokenize(file_content);
-                match tokens {
-                    Ok(Some(_)) => {}
-                    Ok(None) => {
-                        println!("Empty file");
-                        exit(1);
-                    }
-                    Err(err) => {
-                        eprintln!("ERROR {}:{}", &args[1], err);
-                        exit(1);
-                    }
-                }
-                exit(0);
-            }
-            "--parse" => {
-                println!("Parsing mode");
-                exit(0);
-            }
-            "--codegen" => {
-                println!("Codegen mode");
-                exit(0);
-            }
-            _ => {
-                println!("Invalid mode");
-                exit(0);
-            }
-        }
-    }
+    let tokens: Vec<Token>;
 
-    let tokens = lexer::tokenize(file_content);
-    match tokens {
-        Ok(Some(t)) => {dbg!(t);}
+    match lexer::tokenize(file_content) {
+        Ok(Some(t)) => {tokens = t}
         Ok(None) => {
-            println!("Empty file");
+            eprintln!("Empty file");
             exit(1);
         }
         Err(err) => {
@@ -66,6 +51,13 @@ fn main() {
             exit(1);
         }
     }
+
+
+if option == "--lex" {
+        exit(0);
+    }
+
+    parser::parse(tokens);
 
     exit(0);
 }

@@ -9,6 +9,8 @@ pub enum TokenType {
     CBrace,
     OAngle,
     CAngle,
+    OBracket,
+    CBracket,
     SemiColon,
     Plus,
     Minus,
@@ -44,6 +46,8 @@ pub fn tokenize(file_content: String) -> Result<Option<Vec<Token>>, String> {
                     continue;
                 }
                 match c {
+                    '[' => { token = create_token(TokenType::OBracket, String::from(c), line, col); }
+                    ']' => { token = create_token(TokenType::CBracket, String::from(c), line, col); }
                     '(' => { token = create_token(TokenType::OParen, String::from(c), line, col); }
                     ')' => { token = create_token(TokenType::CParen, String::from(c), line, col); }
                     '<' => { token = create_token(TokenType::OAngle, String::from(c), line, col); }
