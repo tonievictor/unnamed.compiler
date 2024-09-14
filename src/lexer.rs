@@ -56,7 +56,6 @@ pub fn tokenize(file_content: String) -> Result<Option<Vec<Token>>, String> {
                     '}' => { token = create_token(TokenType::CBrace, String::from(c), line, col); }
                     '+' => { token = create_token(TokenType::Plus, String::from(c), line, col); }
                     '-' => { token = create_token(TokenType::Minus, String::from(c), line, col); }
-                    '/' => { token = create_token(TokenType::Divide, String::from(c), line, col); }
                     '*' => { token = create_token(TokenType::Multiply, String::from(c), line, col); }
                     '%' => { token = create_token(TokenType::Modulo, String::from(c), line, col); }
                     ';' => { token = create_token(TokenType::SemiColon, String::from(c), line, col); }
@@ -67,7 +66,15 @@ pub fn tokenize(file_content: String) -> Result<Option<Vec<Token>>, String> {
                     }
                     c => {
                         let mut i = 0;
-                        if c.is_ascii_alphabetic() {
+                        if c == '/' {
+                            if let Some(next_char) = chars.peek() {
+                                if *next_char == '/' {
+                                    while let Some(_) = chars.next_if(|&x| x != '\n') {}
+                                    continue;
+                                }
+                            }
+                            token = create_token(TokenType::Divide, String::from(c), line, col);
+                        } else if c.is_ascii_alphabetic() {
                             let mut tok = String::from(c);
                             while let Some(t) = chars.next_if(|&x| x.is_ascii_alphabetic()) {
                                 i = i + 1;

@@ -16,7 +16,7 @@ fn main() {
     let mut option = "";
 
     if args.len() > 2 {
-        match args[2].as_str() {
+        match args[1].as_str() {
             "--lex" | "--codegen" | "--parse" => {
                 option = args[2].as_str();
             }
@@ -27,8 +27,10 @@ fn main() {
         }
     }
 
+    let filename = if args.len() > 2 { &args[2]} else { &args[1]};
+
     let file_content: String;
-    match fs::read_to_string(&args[1]) {
+    match fs::read_to_string(filename) {
         Ok(f) => {
             file_content = f;
         },
@@ -37,8 +39,7 @@ fn main() {
             exit(1);
         }
     }
-
-    let tokens: Vec<Token>;
+let tokens: Vec<Token>;
 
     match lexer::tokenize(file_content) {
         Ok(Some(t)) => {tokens = t}
@@ -53,7 +54,7 @@ fn main() {
     }
 
 
-if option == "--lex" {
+    if option == "--lex" {
         exit(0);
     }
 
