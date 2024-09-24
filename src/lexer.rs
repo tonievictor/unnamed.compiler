@@ -1,8 +1,19 @@
+use std::collections::HashMap;
+
+#[derive(Debug, Copy, Clone)]
+pub enum KeywordType {
+    Int,
+    Void,
+    Char,
+    Long,
+    Return,
+}
+
 #[derive(Debug)]
 pub enum TokenType {
     Identifier,
     Constant,
-    Keyword(String),
+    Keyword(KeywordType),
     OParen,
     CParen,
     OBrace,
@@ -41,26 +52,56 @@ pub fn tokenize(file_content: String) -> Result<Option<Vec<Token>>, String> {
             Some(c) => {
                 col = col + 1;
                 if c == '\n' {
-                    line =  line + 1;
+                    line = line + 1;
                     col = 0;
                     continue;
                 }
                 match c {
-                    '[' => { token = create_token(TokenType::OBracket, String::from(c), line, col); }
-                    ']' => { token = create_token(TokenType::CBracket, String::from(c), line, col); }
-                    '(' => { token = create_token(TokenType::OParen, String::from(c), line, col); }
-                    ')' => { token = create_token(TokenType::CParen, String::from(c), line, col); }
-                    '<' => { token = create_token(TokenType::OAngle, String::from(c), line, col); }
-                    '>' => { token = create_token(TokenType::CAngle, String::from(c), line, col); }
-                    '{' => { token = create_token(TokenType::OBrace, String::from(c), line, col); }
-                    '}' => { token = create_token(TokenType::CBrace, String::from(c), line, col); }
-                    '+' => { token = create_token(TokenType::Plus, String::from(c), line, col); }
-                    '-' => { token = create_token(TokenType::Minus, String::from(c), line, col); }
-                    '*' => { token = create_token(TokenType::Multiply, String::from(c), line, col); }
-                    '%' => { token = create_token(TokenType::Modulo, String::from(c), line, col); }
-                    ';' => { token = create_token(TokenType::SemiColon, String::from(c), line, col); }
-                    ',' => { token = create_token(TokenType::Comma, String::from(c), line, col); }
-                    '=' => { token = create_token(TokenType::Equal, String::from(c), line, col); }
+                    '[' => {
+                        token = create_token(TokenType::OBracket, String::from(c), line, col);
+                    }
+                    ']' => {
+                        token = create_token(TokenType::CBracket, String::from(c), line, col);
+                    }
+                    '(' => {
+                        token = create_token(TokenType::OParen, String::from(c), line, col);
+                    }
+                    ')' => {
+                        token = create_token(TokenType::CParen, String::from(c), line, col);
+                    }
+                    '<' => {
+                        token = create_token(TokenType::OAngle, String::from(c), line, col);
+                    }
+                    '>' => {
+                        token = create_token(TokenType::CAngle, String::from(c), line, col);
+                    }
+                    '{' => {
+                        token = create_token(TokenType::OBrace, String::from(c), line, col);
+                    }
+                    '}' => {
+                        token = create_token(TokenType::CBrace, String::from(c), line, col);
+                    }
+                    '+' => {
+                        token = create_token(TokenType::Plus, String::from(c), line, col);
+                    }
+                    '-' => {
+                        token = create_token(TokenType::Minus, String::from(c), line, col);
+                    }
+                    '*' => {
+                        token = create_token(TokenType::Multiply, String::from(c), line, col);
+                    }
+                    '%' => {
+                        token = create_token(TokenType::Modulo, String::from(c), line, col);
+                    }
+                    ';' => {
+                        token = create_token(TokenType::SemiColon, String::from(c), line, col);
+                    }
+                    ',' => {
+                        token = create_token(TokenType::Comma, String::from(c), line, col);
+                    }
+                    '=' => {
+                        token = create_token(TokenType::Equal, String::from(c), line, col);
+                    }
                     ' ' | '\t' => {
                         continue;
                     }
@@ -80,7 +121,11 @@ pub fn tokenize(file_content: String) -> Result<Option<Vec<Token>>, String> {
                                 i = i + 1;
                                 tok.push(t);
                             }
-                            token = create_token(TokenType::Identifier, tok, line, col);
+                            let keyword = find_keyword(&tok);
+                            match keyword {
+                                Some(keyword_type) => {token = create_token(TokenType::Keyword(keyword_type), tok, line, col);}
+                                None => {token = create_token(TokenType::Identifier, tok, line, col);}
+                            }
                             col = col + i;
                         } else if c.is_ascii_digit() {
                             let mut tok = String::from(c);
@@ -91,19 +136,27 @@ pub fn tokenize(file_content: String) -> Result<Option<Vec<Token>>, String> {
 
                             if let Some(next_char) = chars.peek() {
                                 if next_char.is_ascii_alphabetic() {
-                                    return Err(String::from(format!("{}:{}: invalid suffix on integer constant", line, col)));
+                                    return Err(String::from(format!(
+                                        "{}:{}: invalid suffix on integer constant",
+                                        line, col
+                                    )));
                                 }
                             }
                             token = create_token(TokenType::Constant, tok, line, col);
                             col = col + i;
                         } else {
-                            return Err(String::from(format!("{}:{}: Illegal character in program", line, col)));
+                            return Err(String::from(format!(
+                                "{}:{}: Illegal character in program",
+                                line, col
+                            )));
                         }
                     }
                 }
                 tokens.push(token);
             }
-            None => { break; }
+            None => {
+                break;
+            }
         }
     }
 
@@ -111,6 +164,20 @@ pub fn tokenize(file_content: String) -> Result<Option<Vec<Token>>, String> {
         return Ok(None);
     }
     return Ok(Some(tokens));
+}
+
+fn find_keyword(tok: &String) -> Option<KeywordType> {
+    let keywords = HashMap::from([
+        ("int".to_string(), KeywordType::Int),
+        ("void".to_string(), KeywordType::Void),
+        ("char".to_string(), KeywordType::Char),
+        ("return".to_string(), KeywordType::Return),
+    ]);
+
+    match keywords.get(tok) {
+        Some(t) => {Some(*t)},
+        None => None
+    }
 }
 
 fn create_token(tok_type: TokenType, literal: String, line: u32, col: u32) -> Token {
