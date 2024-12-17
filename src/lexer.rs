@@ -3,9 +3,6 @@ use std::collections::HashMap;
 #[derive(Debug, Copy, Clone)]
 pub enum KeywordType {
     Int,
-    Void,
-    Char,
-    Long,
     Return,
 }
 
@@ -18,19 +15,12 @@ pub enum TokenType {
     CParen,
     OBrace,
     CBrace,
-    OAngle,
-    CAngle,
-    OBracket,
-    CBracket,
     SemiColon,
     Plus,
     Minus,
     Divide,
-    Comma,
     Equal,
     Multiply,
-    Modulo,
-    Illegal,
 }
 
 #[derive(Debug)]
@@ -51,29 +41,17 @@ pub fn tokenize(file_content: String) -> Result<Option<Vec<Token>>, String> {
         match chars.next() {
             Some(c) => {
                 col = col + 1;
-                if c == '\n' {
-                    line = line + 1;
-                    col = 0;
-                    continue;
-                }
                 match c {
-                    '[' => {
-                        token = create_token(TokenType::OBracket, String::from(c), line, col);
-                    }
-                    ']' => {
-                        token = create_token(TokenType::CBracket, String::from(c), line, col);
+                    '\n' => {
+                        line = line + 1;
+                        col = 0;
+                        continue;
                     }
                     '(' => {
                         token = create_token(TokenType::OParen, String::from(c), line, col);
                     }
                     ')' => {
                         token = create_token(TokenType::CParen, String::from(c), line, col);
-                    }
-                    '<' => {
-                        token = create_token(TokenType::OAngle, String::from(c), line, col);
-                    }
-                    '>' => {
-                        token = create_token(TokenType::CAngle, String::from(c), line, col);
                     }
                     '{' => {
                         token = create_token(TokenType::OBrace, String::from(c), line, col);
@@ -90,14 +68,8 @@ pub fn tokenize(file_content: String) -> Result<Option<Vec<Token>>, String> {
                     '*' => {
                         token = create_token(TokenType::Multiply, String::from(c), line, col);
                     }
-                    '%' => {
-                        token = create_token(TokenType::Modulo, String::from(c), line, col);
-                    }
                     ';' => {
                         token = create_token(TokenType::SemiColon, String::from(c), line, col);
-                    }
-                    ',' => {
-                        token = create_token(TokenType::Comma, String::from(c), line, col);
                     }
                     '=' => {
                         token = create_token(TokenType::Equal, String::from(c), line, col);
@@ -123,8 +95,17 @@ pub fn tokenize(file_content: String) -> Result<Option<Vec<Token>>, String> {
                             }
                             let keyword = find_keyword(&tok);
                             match keyword {
-                                Some(keyword_type) => {token = create_token(TokenType::Keyword(keyword_type), tok, line, col);}
-                                None => {token = create_token(TokenType::Identifier, tok, line, col);}
+                                Some(keyword_type) => {
+                                    token = create_token(
+                                        TokenType::Keyword(keyword_type),
+                                        tok,
+                                        line,
+                                        col,
+                                    );
+                                }
+                                None => {
+                                    token = create_token(TokenType::Identifier, tok, line, col);
+                                }
                             }
                             col = col + i;
                         } else if c.is_ascii_digit() {
@@ -169,14 +150,11 @@ pub fn tokenize(file_content: String) -> Result<Option<Vec<Token>>, String> {
 fn find_keyword(tok: &String) -> Option<KeywordType> {
     let keywords = HashMap::from([
         ("int".to_string(), KeywordType::Int),
-        ("void".to_string(), KeywordType::Void),
-        ("char".to_string(), KeywordType::Char),
         ("return".to_string(), KeywordType::Return),
     ]);
-
     match keywords.get(tok) {
-        Some(t) => {Some(*t)},
-        None => None
+        Some(t) => Some(*t),
+        None => None,
     }
 }
 

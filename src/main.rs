@@ -18,7 +18,7 @@ fn main() {
     if args.len() > 2 {
         match args[1].as_str() {
             "--lex" | "--codegen" | "--parse" => {
-                option = args[2].as_str();
+                option = args[1].as_str();
             }
             _ => {
                 eprintln!("Invalid mode");
@@ -39,6 +39,7 @@ fn main() {
             exit(1);
         }
     }
+
     let tokens: Vec<Token>;
 
     match lexer::tokenize(file_content) {
