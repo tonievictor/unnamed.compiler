@@ -1,12 +1,12 @@
 use std::collections::HashMap;
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug,PartialEq, Copy, Clone)]
 pub enum KeywordType {
     Int,
     Return,
 }
 
-#[derive(Debug)]
+#[derive(PartialEq, Clone, Debug)]
 pub enum TokenType {
     Identifier,
     Constant,
@@ -23,10 +23,10 @@ pub enum TokenType {
     Multiply,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Token {
     pub token_type: TokenType,
-    pub token_literal: String,
+    pub token_value: String,
     pub line_num: u32,
     pub col_num: u32,
 }
@@ -158,10 +158,10 @@ fn find_keyword(tok: &String) -> Option<KeywordType> {
     }
 }
 
-fn create_token(tok_type: TokenType, literal: String, line: u32, col: u32) -> Token {
+fn create_token(tok_type: TokenType, value: String, line: u32, col: u32) -> Token {
     return Token {
         token_type: tok_type,
-        token_literal: literal,
+        token_value: value,
         line_num: line,
         col_num: col,
     };
