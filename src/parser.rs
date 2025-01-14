@@ -1,12 +1,13 @@
-use crate::lexer::{Token, TokenType, KeywordType};
-use crate::ast::{Expression, Statement, Program, FunctionDefinition};
+use crate::ast::{Expression, FunctionDefinition, Program, Statement};
+use crate::lexer::{KeywordType, Token, TokenType};
 use std::process::exit;
 
 pub fn parse(tokens: Vec<Token>) -> Program {
-    let mut index: usize = 0;  
-    let function = parse_function(&tokens, &mut index); 
-    let program = Program{function: function};
-    return program;
+    let mut index: usize = 0;
+    let function = parse_function(&tokens, &mut index);
+    let program = Program { function };
+    println!("{:?}", program);
+    program
 }
 
 fn parse_function(tokens: &Vec<Token>, index: &mut usize) -> FunctionDefinition {
@@ -24,7 +25,10 @@ fn parse_function(tokens: &Vec<Token>, index: &mut usize) -> FunctionDefinition 
     let statement = parse_statement(tokens, index);
     expect(TokenType::CBrace, tokens, index);
 
-    FunctionDefinition{name: name, body: statement}
+    FunctionDefinition {
+        name,
+        body: statement,
+    }
 }
 
 fn parse_statement(tokens: &Vec<Token>, index: &mut usize) -> Statement {
@@ -36,20 +40,25 @@ fn parse_statement(tokens: &Vec<Token>, index: &mut usize) -> Statement {
 
 fn parse_expression(tokens: &Vec<Token>, index: &mut usize) -> Expression {
     let t = expect(TokenType::Constant, tokens, index);
-    return Expression::Constant(t.token_value.parse::<u32>().unwrap());
+    Expression::Constant(t.token_value.parse::<u32>().unwrap())
 }
 
-fn expect(token_type:TokenType, tokens: &Vec<Token>, index: &mut usize) -> Token {
+fn expect(token_type: TokenType, tokens: &Vec<Token>, index: &mut usize) -> Token {
     match tokens.get(*index) {
         Some(t) => {
             if token_type == t.token_type {
                 *index += 1;
-                return t.clone();
+                t.clone()
             } else {
-                eprintln!("Syntax error > expected {:?} found {:?}", token_type, t.token_type);
+                eprintln!(
+                    "Syntax error > expected {:?} found {:?}",
+                    token_type, t.token_type
+                );
                 exit(1);
             }
         }
-        None => {todo!()}
+        None => {
+            todo!()
+        }
     }
 }

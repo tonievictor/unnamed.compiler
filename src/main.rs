@@ -3,9 +3,9 @@ use std::env;
 use std::fs;
 use std::process::exit;
 
+pub mod ast;
 pub mod lexer;
 pub mod parser;
-pub mod ast;
 
 fn main() {
     let args: Vec<String> = env::args().collect();

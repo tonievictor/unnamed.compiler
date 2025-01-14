@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-#[derive(Debug,PartialEq, Copy, Clone)]
+#[derive(Debug, PartialEq, Copy, Clone)]
 pub enum KeywordType {
     Int,
     Return,
@@ -40,10 +40,10 @@ pub fn tokenize(file_content: String) -> Result<Option<Vec<Token>>, String> {
         let token: Token;
         match chars.next() {
             Some(c) => {
-                col = col + 1;
+                col += 1;
                 match c {
                     '\n' => {
-                        line = line + 1;
+                        line += 1;
                         col = 0;
                         continue;
                     }
@@ -90,7 +90,7 @@ pub fn tokenize(file_content: String) -> Result<Option<Vec<Token>>, String> {
                         } else if c.is_ascii_alphabetic() {
                             let mut tok = String::from(c);
                             while let Some(t) = chars.next_if(|&x| x.is_ascii_alphabetic()) {
-                                i = i + 1;
+                                i += 1;
                                 tok.push(t);
                             }
                             let keyword = find_keyword(&tok);
@@ -107,11 +107,11 @@ pub fn tokenize(file_content: String) -> Result<Option<Vec<Token>>, String> {
                                     token = create_token(TokenType::Identifier, tok, line, col);
                                 }
                             }
-                            col = col + i;
+                            col += i;
                         } else if c.is_ascii_digit() {
                             let mut tok = String::from(c);
                             while let Some(t) = chars.next_if(|&x| x.is_ascii_digit()) {
-                                i = i + 1;
+                                i += 1;
                                 tok.push(t);
                             }
 
@@ -124,7 +124,7 @@ pub fn tokenize(file_content: String) -> Result<Option<Vec<Token>>, String> {
                                 }
                             }
                             token = create_token(TokenType::Constant, tok, line, col);
-                            col = col + i;
+                            col += i;
                         } else {
                             return Err(String::from(format!(
                                 "{}:{}: Illegal character in program",
@@ -144,7 +144,7 @@ pub fn tokenize(file_content: String) -> Result<Option<Vec<Token>>, String> {
     if tokens.is_empty() {
         return Ok(None);
     }
-    return Ok(Some(tokens));
+    Ok(Some(tokens))
 }
 
 fn find_keyword(tok: &String) -> Option<KeywordType> {
@@ -159,10 +159,10 @@ fn find_keyword(tok: &String) -> Option<KeywordType> {
 }
 
 fn create_token(tok_type: TokenType, value: String, line: u32, col: u32) -> Token {
-    return Token {
+    Token {
         token_type: tok_type,
         token_value: value,
         line_num: line,
         col_num: col,
-    };
+    }
 }
