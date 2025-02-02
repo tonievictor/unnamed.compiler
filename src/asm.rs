@@ -15,25 +15,25 @@ pub struct ASMFunctionDefinition {
     pub instructions: Vec<Instruction>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Instruction {
     Mov(ASMStatement),
     Ret,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ASMStatement {
     pub src: Operand,
     pub dst: Operand,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Operand {
     Imm(u32),
     Register(Register),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Register {
     EAX,
 }
@@ -71,7 +71,7 @@ fn to_asm_instruction(ast_exp: Expression) -> Instruction {
 fn to_asm_statement(val: u32) -> ASMStatement {
     //naive implementation but for now, it should work
     ASMStatement {
-        src: Operand::Imm(val),
         dst: Operand::Register(Register::EAX),
+        src: Operand::Imm(val),
     }
 }
