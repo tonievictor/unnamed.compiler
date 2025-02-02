@@ -82,7 +82,7 @@ pub fn tokenize(file_content: String) -> Result<Option<Vec<Token>>, String> {
                         if c == '/' {
                             if let Some(next_char) = chars.peek() {
                                 if *next_char == '/' {
-                                    while let Some(_) = chars.next_if(|&x| x != '\n') {}
+                                    while chars.next_if(|&x| x != '\n').is_some() {}
                                     continue;
                                 }
                             }
@@ -117,19 +117,19 @@ pub fn tokenize(file_content: String) -> Result<Option<Vec<Token>>, String> {
 
                             if let Some(next_char) = chars.peek() {
                                 if next_char.is_ascii_alphabetic() {
-                                    return Err(String::from(format!(
+                                    return Err(format!(
                                         "{}:{}: invalid suffix on integer constant",
                                         line, col
-                                    )));
+                                    ));
                                 }
                             }
                             token = create_token(TokenType::Constant, tok, line, col);
                             col += i;
                         } else {
-                            return Err(String::from(format!(
-                                "{}:{}: Illegal character in program",
-                                line, col
-                            )));
+                            return Err(format!(
+                                "{}:{}: Illegal character in program {}",
+                                line, col, c
+                            ));
                         }
                     }
                 }
@@ -152,10 +152,7 @@ fn find_keyword(tok: &String) -> Option<KeywordType> {
         ("int".to_string(), KeywordType::Int),
         ("return".to_string(), KeywordType::Return),
     ]);
-    match keywords.get(tok) {
-        Some(t) => Some(*t),
-        None => None,
-    }
+    keywords.get(tok).copied()
 }
 
 fn create_token(tok_type: TokenType, value: String, line: u32, col: u32) -> Token {

@@ -5,9 +5,7 @@ use std::process::exit;
 pub fn parse(tokens: Vec<Token>) -> Program {
     let mut index: usize = 0;
     let function = parse_function(&tokens, &mut index);
-    let program = Program { function };
-    println!("{:?}", program);
-    program
+    Program { function }
 }
 
 fn parse_function(tokens: &Vec<Token>, index: &mut usize) -> FunctionDefinition {

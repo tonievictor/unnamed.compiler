@@ -1,9 +1,10 @@
-use crate::lexer::Token;
 use std::env;
 use std::fs;
 use std::process::exit;
 
+pub mod asm;
 pub mod ast;
+pub mod codegen;
 pub mod lexer;
 pub mod parser;
 
@@ -30,21 +31,16 @@ fn main() {
 
     let filename = if args.len() > 2 { &args[2] } else { &args[1] };
 
-    let file_content: String;
-    match fs::read_to_string(filename) {
-        Ok(f) => {
-            file_content = f;
-        }
+    let file_content = match fs::read_to_string(filename) {
+        Ok(f) => f,
         Err(err) => {
             eprintln!("ERROR {}:{}", &args[1], err);
             exit(1);
         }
-    }
+    };
 
-    let tokens: Vec<Token>;
-
-    match lexer::tokenize(file_content) {
-        Ok(Some(t)) => tokens = t,
+    let tokens = match lexer::tokenize(file_content) {
+        Ok(Some(t)) => t,
         Ok(None) => {
             eprintln!("Empty file");
             exit(1);
@@ -53,13 +49,12 @@ fn main() {
             eprintln!("ERROR {}:{}", &args[1], err);
             exit(1);
         }
-    }
+    };
 
     if option == "--lex" {
         exit(0);
     }
 
-    parser::parse(tokens);
-
-    exit(0);
+    let ast = parser::parse(tokens);
+    asm::to_asm(ast);
 }
