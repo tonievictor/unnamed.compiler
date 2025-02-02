@@ -56,5 +56,18 @@ fn main() {
     }
 
     let ast = parser::parse(tokens);
-    asm::to_asm(ast);
+    let asm = asm::to_asm(ast);
+
+    match codegen::write_asm_to_file(asm, "main.asm") {
+        Ok(_) => {
+            println!("finished compilation")
+        }
+        Err(err) => {
+            eprintln!(
+                "An error occured while generating assembly instructions {:?}",
+                err
+            );
+            exit(1);
+        }
+    }
 }

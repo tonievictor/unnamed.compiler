@@ -127,7 +127,7 @@ pub fn tokenize(file_content: String) -> Result<Option<Vec<Token>>, String> {
                             col += i;
                         } else {
                             return Err(format!(
-                                "{}:{}: Illegal character in program {}",
+                                "{}:{}: Illegal character '{}' in program",
                                 line, col, c
                             ));
                         }

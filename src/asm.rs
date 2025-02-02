@@ -40,9 +40,7 @@ pub enum Register {
 
 pub fn to_asm(ast: Program) -> ASMProgram {
     let fn_def = to_asm_fn(ast.function);
-    let asm = ASMProgram { function: fn_def };
-    println!("{:?}", asm);
-    asm
+    ASMProgram { function: fn_def }
 }
 
 fn to_asm_fn(ast_fn: FunctionDefinition) -> ASMFunctionDefinition {
