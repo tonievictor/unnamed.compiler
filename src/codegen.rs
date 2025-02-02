@@ -33,8 +33,8 @@ fn write_func(mut file: &File, func: ASMFunctionDefinition) -> Result<(), io::Er
 
 fn get_instructions(instr: Instruction) -> String {
     match instr {
-        Instruction::Ret => String::from("ret\n"),
-        Instruction::Mov(statement) => String::from(format!("mov {}\n", get_statement(statement))),
+        Instruction::Ret => String::from("\tret\n"),
+        Instruction::Mov(statement) => String::from(format!("\tmov {}\n", get_statement(statement))),
     }
 }
 

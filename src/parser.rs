@@ -2,10 +2,13 @@ use crate::ast::{Expression, FunctionDefinition, Program, Statement};
 use crate::lexer::{KeywordType, Token, TokenType};
 use std::process::exit;
 
-pub fn parse(tokens: Vec<Token>) -> Program {
+pub fn parse(tokens: Vec<Token>) -> Result<Program, String> {
     let mut index: usize = 0;
     let function = parse_function(&tokens, &mut index);
-    Program { function }
+    if tokens.len() != index {
+        return Err(String::from("Illegal junk violates top level construct"));
+    }
+    Ok(Program { function })
 }
 
 fn parse_function(tokens: &Vec<Token>, index: &mut usize) -> FunctionDefinition {

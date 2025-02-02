@@ -34,7 +34,7 @@ fn main() {
     let file_content = match fs::read_to_string(filename) {
         Ok(f) => f,
         Err(err) => {
-            eprintln!("ERROR {}:{}", &args[1], err);
+            eprintln!("ERROR {}: {}", &args[1], err);
             exit(1);
         }
     };
@@ -46,7 +46,7 @@ fn main() {
             exit(1);
         }
         Err(err) => {
-            eprintln!("ERROR {}:{}", &args[1], err);
+            eprintln!("ERROR {}: {}", &args[1], err);
             exit(1);
         }
     };
@@ -55,7 +55,13 @@ fn main() {
         exit(0);
     }
 
-    let ast = parser::parse(tokens);
+    let ast = match parser::parse(tokens) {
+        Ok(a) => a,
+        Err(err) => {
+            eprintln!("ERROR {}: {}", &args[1], err);
+            exit(1);
+        }
+    };
     let asm = asm::to_asm(ast);
 
     match codegen::write_asm_to_file(asm, "main.asm") {
