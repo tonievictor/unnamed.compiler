@@ -7,13 +7,13 @@ pub fn write_asm_to_file(asm: ASMProgram, filename: &str) -> Result<(), io::Erro
     let mut file = OpenOptions::new().write(true).create(true).open(filename)?;
 
     //.globl <name>
-    let globl = format!("global {}\n\n", asm.function.name.as_str());
+    let globl = format!(".globl {}\n\n", asm.function.name.as_str());
     file.write(globl.as_bytes())?;
 
     write_func(&file, asm.function)?;
 
     // indicates that the generated asm code doesn't need an executable stack
-    file.write("section .note.GNU-stack,\"\",@progbits".as_bytes())?;
+    file.write(".section .note.GNU-stack,\"\",@progbits\n\n".as_bytes())?;
     Ok(())
 }
 
@@ -34,7 +34,9 @@ fn write_func(mut file: &File, func: ASMFunctionDefinition) -> Result<(), io::Er
 fn get_instructions(instr: Instruction) -> String {
     match instr {
         Instruction::Ret => String::from("\tret\n"),
-        Instruction::Mov(statement) => String::from(format!("\tmov {}\n", get_statement(statement))),
+        Instruction::Mov(statement) => {
+            String::from(format!("\tmov {}\n", get_statement(statement)))
+        }
     }
 }
 
@@ -42,14 +44,14 @@ fn get_statement(stm: ASMStatement) -> String {
     let src = get_operand(stm.src);
     let dst = get_operand(stm.dst);
 
-    String::from(format!("{}, {}", dst.as_str(), src.as_str()))
+    String::from(format!("{}, {}", src.as_str(), dst.as_str()))
 }
 
 fn get_operand(opr: Operand) -> String {
     match opr {
-        Operand::Imm(val) => val.to_string(),
+        Operand::Imm(val) => String::from(format!("${}", val.to_string())),
         Operand::Register(reg) => match reg {
-            Register::EAX => String::from("eax"),
+            Register::EAX => String::from("%eax"),
         },
     }
 }

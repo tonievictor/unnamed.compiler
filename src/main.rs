@@ -30,6 +30,10 @@ fn main() {
     }
 
     let filename = if args.len() > 2 { &args[2] } else { &args[1] };
+    if &filename[(filename.len() - 2)..] != ".c" {
+        eprintln!("Cannot execute {}: Invalid filetype", filename);
+        exit(1);
+    }
 
     let file_content = match fs::read_to_string(filename) {
         Ok(f) => f,
@@ -64,7 +68,10 @@ fn main() {
     };
     let asm = asm::to_asm(ast);
 
-    match codegen::write_asm_to_file(asm, "main.asm") {
+    match codegen::write_asm_to_file(
+        asm,
+        format!("{}.s", &filename[..(filename.len() - 2)]).as_str(),
+    ) {
         Ok(_) => {
             println!("finished compilation")
         }
