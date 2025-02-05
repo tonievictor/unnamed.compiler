@@ -1,2 +1,3 @@
-/target
-tests
+main.s
+a.out
+target

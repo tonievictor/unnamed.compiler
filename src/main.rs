@@ -24,7 +24,7 @@ fn main() {
             }
             _ => {
                 eprintln!("Invalid mode");
-                exit(0);
+                exit(1);
             }
         }
     }
@@ -56,6 +56,7 @@ fn main() {
     };
 
     if option == "--lex" {
+        println!("{:#?}", tokens);
         exit(0);
     }
 
@@ -66,6 +67,11 @@ fn main() {
             exit(1);
         }
     };
+
+    if option == "--parse" {
+        println!("{:#?}", ast);
+        exit(0);
+    }
     let asm = asm::to_asm(ast);
 
     match codegen::write_asm_to_file(

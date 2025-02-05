@@ -58,8 +58,6 @@ fn expect(token_type: TokenType, tokens: &Vec<Token>, index: &mut usize) -> Toke
                 exit(1);
             }
         }
-        None => {
-            todo!()
-        }
+        None => todo!(),
     }
 }
