@@ -1,9 +1,9 @@
-use std::collections::HashMap;
-
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub enum KeywordType {
     Int,
     Return,
+    Pub,
+    Fn,
 }
 
 #[derive(PartialEq, Clone, Debug)]
@@ -19,6 +19,7 @@ pub enum TokenType {
     Plus,
     Minus,
     Divide,
+    Arrow,
     Equal,
     Multiply,
 }
@@ -62,9 +63,6 @@ pub fn tokenize(file_content: String) -> Result<Option<Vec<Token>>, String> {
                     '+' => {
                         token = create_token(TokenType::Plus, String::from(c), line, col);
                     }
-                    '-' => {
-                        token = create_token(TokenType::Minus, String::from(c), line, col);
-                    }
                     '*' => {
                         token = create_token(TokenType::Multiply, String::from(c), line, col);
                     }
@@ -79,7 +77,26 @@ pub fn tokenize(file_content: String) -> Result<Option<Vec<Token>>, String> {
                     }
                     c => {
                         let mut i = 0;
-                        if c == '/' {
+                        if c == '-' {
+                            token = match chars.peek() {
+                                Some(next_char) => {
+                                    if *next_char == '>' {
+                                        chars.next();
+                                        let coln = col;
+                                        col += 1;
+                                        create_token(
+                                            TokenType::Arrow,
+                                            String::from("->"),
+                                            line,
+                                            coln,
+                                        )
+                                    } else {
+                                        create_token(TokenType::Minus, String::from(c), line, col)
+                                    }
+                                }
+                                None => create_token(TokenType::Minus, String::from(c), line, col),
+                            }
+                        } else if c == '/' {
                             if let Some(next_char) = chars.peek() {
                                 if *next_char == '/' {
                                     while chars.next_if(|&x| x != '\n').is_some() {}
@@ -93,20 +110,9 @@ pub fn tokenize(file_content: String) -> Result<Option<Vec<Token>>, String> {
                                 i += 1;
                                 tok.push(t);
                             }
-                            let keyword = find_keyword(&tok);
-                            match keyword {
-                                Some(keyword_type) => {
-                                    token = create_token(
-                                        TokenType::Keyword(keyword_type),
-                                        tok,
-                                        line,
-                                        col,
-                                    );
-                                }
-                                None => {
-                                    token = create_token(TokenType::Identifier, tok, line, col);
-                                }
-                            }
+                            let token_type = get_tokentype_from_keyword(&tok);
+                            token = create_token(token_type, tok, line, col);
+
                             col += i;
                         } else if c.is_ascii_digit() {
                             let mut tok = String::from(c);
@@ -147,12 +153,14 @@ pub fn tokenize(file_content: String) -> Result<Option<Vec<Token>>, String> {
     Ok(Some(tokens))
 }
 
-fn find_keyword(tok: &String) -> Option<KeywordType> {
-    let keywords = HashMap::from([
-        ("int".to_string(), KeywordType::Int),
-        ("return".to_string(), KeywordType::Return),
-    ]);
-    keywords.get(tok).copied()
+fn get_tokentype_from_keyword(tok: &String) -> TokenType {
+    match tok.as_str() {
+        "int" => TokenType::Keyword(KeywordType::Int),
+        "return" => TokenType::Keyword(KeywordType::Return),
+        "pub" => TokenType::Keyword(KeywordType::Pub),
+        "fn" => TokenType::Keyword(KeywordType::Fn),
+        _ => TokenType::Identifier,
+    }
 }
 
 fn create_token(tok_type: TokenType, value: String, line: u32, col: u32) -> Token {

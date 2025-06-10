@@ -2,6 +2,6 @@
 A simple compiler written in rust [WIP]
 ## Running
 ```rust
-cargo run <filename.c>
+cargo run <filename.un>
 ```
-> The <filename.c> is a C source file. The current implementation is very basic and supports only a small subset of the C language. An example can be found in the main.c file.
+> The <filename.un> is a `unamed` source file, my naive attempt at creating a custom programming language. An example can be found in the main.un file.

@@ -2,11 +2,7 @@ use std::env;
 use std::fs;
 use std::process::exit;
 
-pub mod asm;
-pub mod ast;
-pub mod codegen;
 pub mod lexer;
-pub mod parser;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -30,7 +26,7 @@ fn main() {
     }
 
     let filename = if args.len() > 2 { &args[2] } else { &args[1] };
-    if &filename[(filename.len() - 2)..] != ".c" {
+    if &filename[(filename.len() - 3)..] != ".un" {
         eprintln!("Cannot execute {}: Invalid filetype", filename);
         exit(1);
     }
@@ -56,37 +52,8 @@ fn main() {
     };
 
     if option == "--lex" {
-        println!("{:#?}", tokens);
         exit(0);
     }
 
-    let ast = match parser::parse(tokens) {
-        Ok(a) => a,
-        Err(err) => {
-            eprintln!("ERROR {}: {}", &args[1], err);
-            exit(1);
-        }
-    };
-
-    if option == "--parse" {
-        println!("{:#?}", ast);
-        exit(0);
-    }
-    let asm = asm::to_asm(ast);
-
-    match codegen::write_asm_to_file(
-        asm,
-        format!("{}.s", &filename[..(filename.len() - 2)]).as_str(),
-    ) {
-        Ok(_) => {
-            println!("finished compilation")
-        }
-        Err(err) => {
-            eprintln!(
-                "An error occured while generating assembly instructions {:?}",
-                err
-            );
-            exit(1);
-        }
-    }
+    println!("{:#?}", tokens);
 }
