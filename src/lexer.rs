@@ -4,12 +4,16 @@ pub enum KeywordType {
     Return,
     Pub,
     Fn,
+    // pub fn main() -> int {
+    // 	return 2;
+    // }
 }
 
 #[derive(PartialEq, Clone, Debug)]
 pub enum TokenType {
     Identifier,
-    Constant,
+    Number,
+    String,
     Keyword(KeywordType),
     OParen,
     CParen,
@@ -106,12 +110,13 @@ pub fn tokenize(file_content: String) -> Result<Option<Vec<Token>>, String> {
                             token = create_token(TokenType::Divide, String::from(c), line, col);
                         } else if c.is_ascii_alphabetic() {
                             let mut tok = String::from(c);
-                            while let Some(t) = chars.next_if(|&x| x.is_ascii_alphabetic()) {
+                            while let Some(t) = chars
+                                .next_if(|&x| matches!(x, 'A'..='Z' | 'a'..='z' | '_' | '0'..='9'))
+                            {
                                 i += 1;
                                 tok.push(t);
                             }
-                            let token_type = get_tokentype_from_keyword(&tok);
-                            token = create_token(token_type, tok, line, col);
+                            token = create_keyword_or_identifier(tok, line, col);
 
                             col += i;
                         } else if c.is_ascii_digit() {
@@ -129,7 +134,7 @@ pub fn tokenize(file_content: String) -> Result<Option<Vec<Token>>, String> {
                                     ));
                                 }
                             }
-                            token = create_token(TokenType::Constant, tok, line, col);
+                            token = create_token(TokenType::Number, tok, line, col);
                             col += i;
                         } else {
                             return Err(format!(
@@ -153,14 +158,16 @@ pub fn tokenize(file_content: String) -> Result<Option<Vec<Token>>, String> {
     Ok(Some(tokens))
 }
 
-fn get_tokentype_from_keyword(tok: &String) -> TokenType {
-    match tok.as_str() {
+fn create_keyword_or_identifier(tok: String, line: u32, col: u32) -> Token {
+    let ttype = match tok.as_str() {
         "int" => TokenType::Keyword(KeywordType::Int),
         "return" => TokenType::Keyword(KeywordType::Return),
         "pub" => TokenType::Keyword(KeywordType::Pub),
         "fn" => TokenType::Keyword(KeywordType::Fn),
         _ => TokenType::Identifier,
-    }
+    };
+
+    create_token(ttype, tok, line, col)
 }
 
 fn create_token(tok_type: TokenType, value: String, line: u32, col: u32) -> Token {
