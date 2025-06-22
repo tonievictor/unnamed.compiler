@@ -4,9 +4,6 @@ pub enum KeywordType {
     Return,
     Pub,
     Fn,
-    // pub fn main() -> int {
-    // 	return 2;
-    // }
 }
 
 #[derive(PartialEq, Clone, Debug)]
@@ -42,109 +39,95 @@ pub fn tokenize(file_content: String) -> Result<Option<Vec<Token>>, String> {
     let mut col = 0;
     let mut chars = file_content.chars().peekable();
     loop {
-        let token: Token;
+        col += 1;
         match chars.next() {
+            Some('\n') => {
+                line += 1;
+                col = 0;
+                continue;
+            }
+            Some('(') => {
+                tokens.push(create_token(TokenType::OParen, String::from('('), line, col));
+            }
+            Some(')') => {
+                tokens.push(create_token(TokenType::CParen, String::from(')'), line, col));
+            }
+            Some('{') => {
+                tokens.push(create_token(TokenType::OBrace, String::from('{'), line, col));
+            }
+            Some('}') => {
+                tokens.push(create_token(TokenType::CBrace, String::from('}'), line, col));
+            }
+            Some('+') => {
+                tokens.push(create_token(TokenType::Plus, String::from('+'), line, col));
+            }
+            Some('*') => {
+                tokens.push(create_token(TokenType::Multiply, String::from('*'), line, col));
+            }
+            Some(';') => {
+                tokens.push(create_token(TokenType::SemiColon, String::from(';'), line, col));
+            }
+            Some('=') => {
+                tokens.push(create_token(TokenType::Equal, String::from('='), line, col));
+            }
+            Some(' ') | Some('\t') => {
+                continue;
+            }
             Some(c) => {
-                col += 1;
-                match c {
-                    '\n' => {
-                        line += 1;
-                        col = 0;
-                        continue;
+                let mut i = 0;
+                if c == '-' {
+                    let t = match chars.peek() {
+                        Some('>') => {
+                            chars.next();
+                            let coln = col;
+                            col += 1;
+                            create_token(TokenType::Arrow, String::from("->"), line, coln)
+                        }
+                        _ => create_token(TokenType::Minus, String::from(c), line, col),
+                    };
+                    tokens.push(t);
+                } else if c == '/' {
+                    if let Some(next_char) = chars.peek() {
+                        if *next_char == '/' {
+                            while chars.next_if(|&x| x != '\n').is_some() {}
+                            continue;
+                        }
                     }
-                    '(' => {
-                        token = create_token(TokenType::OParen, String::from(c), line, col);
+                    tokens.push(create_token(TokenType::Divide, String::from(c), line, col));
+                } else if c.is_ascii_alphabetic() {
+                    let mut tok = String::from(c);
+                    while let Some(t) =
+                        chars.next_if(|&x| matches!(x, 'A'..='Z' | 'a'..='z' | '_' | '0'..='9'))
+                    {
+                        i += 1;
+                        tok.push(t);
                     }
-                    ')' => {
-                        token = create_token(TokenType::CParen, String::from(c), line, col);
-                    }
-                    '{' => {
-                        token = create_token(TokenType::OBrace, String::from(c), line, col);
-                    }
-                    '}' => {
-                        token = create_token(TokenType::CBrace, String::from(c), line, col);
-                    }
-                    '+' => {
-                        token = create_token(TokenType::Plus, String::from(c), line, col);
-                    }
-                    '*' => {
-                        token = create_token(TokenType::Multiply, String::from(c), line, col);
-                    }
-                    ';' => {
-                        token = create_token(TokenType::SemiColon, String::from(c), line, col);
-                    }
-                    '=' => {
-                        token = create_token(TokenType::Equal, String::from(c), line, col);
-                    }
-                    ' ' | '\t' => {
-                        continue;
-                    }
-                    c => {
-                        let mut i = 0;
-                        if c == '-' {
-                            token = match chars.peek() {
-                                Some(next_char) => {
-                                    if *next_char == '>' {
-                                        chars.next();
-                                        let coln = col;
-                                        col += 1;
-                                        create_token(
-                                            TokenType::Arrow,
-                                            String::from("->"),
-                                            line,
-                                            coln,
-                                        )
-                                    } else {
-                                        create_token(TokenType::Minus, String::from(c), line, col)
-                                    }
-                                }
-                                None => create_token(TokenType::Minus, String::from(c), line, col),
-                            }
-                        } else if c == '/' {
-                            if let Some(next_char) = chars.peek() {
-                                if *next_char == '/' {
-                                    while chars.next_if(|&x| x != '\n').is_some() {}
-                                    continue;
-                                }
-                            }
-                            token = create_token(TokenType::Divide, String::from(c), line, col);
-                        } else if c.is_ascii_alphabetic() {
-                            let mut tok = String::from(c);
-                            while let Some(t) = chars
-                                .next_if(|&x| matches!(x, 'A'..='Z' | 'a'..='z' | '_' | '0'..='9'))
-                            {
-                                i += 1;
-                                tok.push(t);
-                            }
-                            token = create_keyword_or_identifier(tok, line, col);
+                    tokens.push(create_keyword_or_identifier(tok, line, col));
 
-                            col += i;
-                        } else if c.is_ascii_digit() {
-                            let mut tok = String::from(c);
-                            while let Some(t) = chars.next_if(|&x| x.is_ascii_digit()) {
-                                i += 1;
-                                tok.push(t);
-                            }
+                    col += i;
+                } else if c.is_ascii_digit() {
+                    let mut tok = String::from(c);
+                    while let Some(t) = chars.next_if(|&x| x.is_ascii_digit()) {
+                        i += 1;
+                        tok.push(t);
+                    }
 
-                            if let Some(next_char) = chars.peek() {
-                                if next_char.is_ascii_alphabetic() {
-                                    return Err(format!(
-                                        "{}:{}: invalid suffix on integer constant",
-                                        line, col
-                                    ));
-                                }
-                            }
-                            token = create_token(TokenType::Number, tok, line, col);
-                            col += i;
-                        } else {
+                    if let Some(next_char) = chars.peek() {
+                        if !matches!(next_char, ' ' | ';') {
                             return Err(format!(
-                                "{}:{}: Illegal character '{}' in program",
-                                line, col, c
+                                "{}:{}: invalid suffix on integer constant",
+                                line, col
                             ));
                         }
                     }
+                    tokens.push(create_token(TokenType::Number, tok, line, col));
+                    col += i;
+                } else {
+                    return Err(format!(
+                        "{}:{}: Illegal character '{}' in program",
+                        line, col, c
+                    ));
                 }
-                tokens.push(token);
             }
             None => {
                 break;
