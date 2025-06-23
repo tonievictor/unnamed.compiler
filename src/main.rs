@@ -40,11 +40,7 @@ fn main() {
     };
 
     let tokens = match lexer::tokenize(file_content) {
-        Ok(Some(t)) => t,
-        Ok(None) => {
-            eprintln!("Empty file");
-            exit(1);
-        }
+        Ok(t) => t,
         Err(err) => {
             eprintln!("ERROR {}: {}", &args[1], err);
             exit(1);
