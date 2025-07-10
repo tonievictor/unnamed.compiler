@@ -3,6 +3,7 @@ use std::fs;
 use std::process::exit;
 
 pub mod lexer;
+pub mod parser;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -26,10 +27,10 @@ fn main() {
     }
 
     let filename = if args.len() > 2 { &args[2] } else { &args[1] };
-    if &filename[(filename.len() - 3)..] != ".un" {
-        eprintln!("Cannot execute {}: Invalid filetype", filename);
-        exit(1);
-    }
+    // if &filename[(filename.len() - 2)..] != ".c" {
+    //     eprintln!("Cannot execute {}: Invalid filetype", filename);
+    //     exit(1);
+    // }
 
     let file_content = match fs::read_to_string(filename) {
         Ok(f) => f,
@@ -50,6 +51,5 @@ fn main() {
     if option == "--lex" {
         exit(0);
     }
-
-    println!("{:#?}", tokens);
+    parser::parse(&mut tokens.iter());
 }

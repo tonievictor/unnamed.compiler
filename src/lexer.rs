@@ -1,39 +1,28 @@
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub enum KeywordType {
-    Int,
-    Return,
-    Pub,
     Fn,
-}
-
-#[derive(PartialEq, Clone, Debug)]
-pub enum NumberType {
-    Int(u32),
+    Return,
+    Let,
 }
 
 #[derive(PartialEq, Clone, Debug)]
 pub enum TokenType {
+    Constant,
     Identifier,
-    Number(NumberType),
-    String(String),
+    StringLiteral,
     Keyword(KeywordType),
     OParen,
     CParen,
     OBrace,
     CBrace,
-    SemiColon,
-    Plus,
-    Minus,
-    Divide,
-    Arrow,
+    Semicolon,
     Equal,
-    Multiply,
-    WhiteSpace,
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Token {
     pub ttype: TokenType,
+    pub literal: String,
     pub line: u32,
     pub col: u32,
 }
@@ -52,46 +41,55 @@ pub fn tokenize(code: String) -> Result<Vec<Token>, String> {
                 continue;
             }
             Some('(') => {
-                tokens.push(create_token(TokenType::OParen, lnum, cnum));
+                tokens.push(create_token(
+                    TokenType::OParen,
+                    String::from("("),
+                    lnum,
+                    cnum,
+                ));
             }
             Some(')') => {
-                tokens.push(create_token(TokenType::CParen, lnum, cnum));
+                tokens.push(create_token(
+                    TokenType::CParen,
+                    String::from(")"),
+                    lnum,
+                    cnum,
+                ));
             }
             Some('{') => {
-                tokens.push(create_token(TokenType::OBrace, lnum, cnum));
+                tokens.push(create_token(
+                    TokenType::OBrace,
+                    String::from("{"),
+                    lnum,
+                    cnum,
+                ));
             }
             Some('}') => {
-                tokens.push(create_token(TokenType::CBrace, lnum, cnum));
-            }
-            Some('+') => {
-                tokens.push(create_token(TokenType::Plus, lnum, cnum));
-            }
-            Some('*') => {
-                tokens.push(create_token(TokenType::Multiply, lnum, cnum));
+                tokens.push(create_token(
+                    TokenType::CBrace,
+                    String::from("}"),
+                    lnum,
+                    cnum,
+                ));
             }
             Some(';') => {
-                tokens.push(create_token(TokenType::SemiColon, lnum, cnum));
+                tokens.push(create_token(
+                    TokenType::Semicolon,
+                    String::from(";"),
+                    lnum,
+                    cnum,
+                ));
             }
             Some('=') => {
-                tokens.push(create_token(TokenType::Equal, lnum, cnum));
+                tokens.push(create_token(
+                    TokenType::Equal,
+                    String::from("="),
+                    lnum,
+                    cnum,
+                ));
             }
             Some(' ') | Some('\t') => {
-                tokens.push(create_token(TokenType::WhiteSpace, lnum, cnum));
-                while let Some(_) = chars.next_if(|&x| matches!(x, ' ' | '\t')) {
-                    cnum += 1;
-                }
-            }
-            Some('-') => {
-                let t = match chars.peek() {
-                    Some('>') => {
-                        chars.next();
-                        let coln = cnum;
-                        cnum += 1;
-                        create_token(TokenType::Arrow, lnum, coln)
-                    }
-                    _ => create_token(TokenType::Minus, lnum, cnum),
-                };
-                tokens.push(t);
+                continue;
             }
             Some('/') => {
                 if let Some(next_char) = chars.peek() {
@@ -100,7 +98,10 @@ pub fn tokenize(code: String) -> Result<Vec<Token>, String> {
                         continue;
                     }
                 }
-                tokens.push(create_token(TokenType::Divide, lnum, cnum));
+                return Err(format!(
+                    "{}:{}: Illegal character '{}' in program",
+                    lnum, cnum, '/'
+                ));
             }
             Some('"') => {
                 let i = cnum;
@@ -127,7 +128,7 @@ pub fn tokenize(code: String) -> Result<Vec<Token>, String> {
                         None => return Err(format!("SYNTAX ERROR {{{},{}}}: unexpected end of file found before string literal termination", lnum, cnum))
                     }
                 }
-                tokens.push(create_token(TokenType::String(tok), lnum, i));
+                tokens.push(create_token(TokenType::StringLiteral, tok, lnum, i));
             }
             Some(c) => {
                 let mut i = 0;
@@ -149,19 +150,7 @@ pub fn tokenize(code: String) -> Result<Vec<Token>, String> {
                         tok.push(t);
                     }
 
-                    let num_literal = match tok.as_str().trim().parse::<u32>() {
-                        Ok(n) => n,
-                        Err(_) => {
-                            return Err(format!(
-                                "TYPE ERROR {{{}, {}}}, only integers are supported for now", lnum, cnum
-                            ))
-                        }
-                    };
-                    tokens.push(create_token(
-                        TokenType::Number(NumberType::Int(num_literal)),
-                        lnum,
-                        cnum,
-                    ));
+                    tokens.push(create_token(TokenType::Constant, tok, lnum, cnum));
                     cnum += i;
                 } else {
                     return Err(format!(
@@ -181,76 +170,20 @@ pub fn tokenize(code: String) -> Result<Vec<Token>, String> {
 
 fn create_keyword_or_identifier(tok: String, line: u32, col: u32) -> Token {
     let ttype = match tok.as_str() {
-        "int" => TokenType::Keyword(KeywordType::Int),
-        "return" => TokenType::Keyword(KeywordType::Return),
-        "pub" => TokenType::Keyword(KeywordType::Pub),
         "fn" => TokenType::Keyword(KeywordType::Fn),
+        "let" => TokenType::Keyword(KeywordType::Let),
+        "return" => TokenType::Keyword(KeywordType::Return),
         _ => TokenType::Identifier,
     };
 
-    create_token(ttype, line, col)
+    create_token(ttype, tok, line, col)
 }
 
-fn create_token(tok_type: TokenType, line: u32, col: u32) -> Token {
+fn create_token(tok_type: TokenType, literal: String, line: u32, col: u32) -> Token {
     Token {
         ttype: tok_type,
+        literal,
         line,
         col,
     }
 }
-
-#[test]
-fn test_string_tokenization() {
-    let data = &[
-        String::from(r#""Hello""#),
-        String::from(r#""string\twith""#),
-        String::from(r#""escaped \\\"quote\\\"""#),
-        String::from(r#""multi\nline\nstring""#),
-        String::from(r#""""#),
-    ];
-
-    for elem in data.iter() {
-        let expected = vec![Token {
-            ttype: TokenType::String(elem.clone()),
-            line: 1,
-            col: 1,
-        }];
-        assert_eq!(tokenize(elem.clone()), Ok(expected));
-    }
-}
-
-#[test]
-fn test_identifier_tokenization() {
-    let data = &[
-        String::from("Hello"),
-        String::from("main_one"),
-        String::from("main_2"),
-    ];
-    for elem in data.iter() {
-        let expected = vec![Token {
-            ttype: TokenType::Identifier,
-            line: 1,
-            col: 1,
-        }];
-        assert_eq!(tokenize(elem.clone()), Ok(expected));
-    }
-}
-
-// #[test]
-// fn test_keyword_tokenization() {
-//     let data = &[
-//         String::from("fn"),
-//         String::from("return"),
-//         String::from("pub"),
-//         String::from("int"),
-//     ];
-//     for elem in data.iter() {
-//         let expected = vec![Token {
-//             token_type: TokenType::Keyword(),
-//             token_value: elem.clone(),
-//             line_num: 1,
-//             col_num: 1,
-//         }];
-//         assert_eq!(tokenize(elem.clone()), Ok(expected));
-//     }
-// }
