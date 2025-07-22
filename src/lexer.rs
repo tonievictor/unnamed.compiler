@@ -1,16 +1,18 @@
+use std::fmt::{Display, Formatter, Result as FmtResult};
+
 #[derive(Debug, PartialEq, Copy, Clone)]
-pub enum KeywordType {
+pub enum Keyword {
     Fn,
     Return,
     Let,
 }
 
-#[derive(PartialEq, Clone, Debug)]
-pub enum TokenType<'a> {
+#[derive(PartialEq, Clone, Debug, Copy)]
+pub enum TokenKind<'a> {
     Constant(&'a str),
     Identifier(&'a str),
     StringLiteral(&'a str),
-    Keyword(KeywordType),
+    Keyword(Keyword),
     OParen,
     CParen,
     OBrace,
@@ -19,14 +21,33 @@ pub enum TokenType<'a> {
     Equal,
 }
 
+impl<'a> Display for TokenKind<'a> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
+        match self {
+            TokenKind::OParen => write!(f, "{}", '('),
+            TokenKind::CParen => write!(f, "{}", ')'),
+            TokenKind::CBrace => write!(f, "{}", '}'),
+            TokenKind::OBrace => write!(f, "{}", '{'),
+            TokenKind::Semicolon => write!(f, "{}", ';'),
+            TokenKind::Equal => write!(f, "{}", '='),
+            TokenKind::Keyword(Keyword::Fn) => write!(f, "fn"),
+            TokenKind::Keyword(Keyword::Return) => write!(f, "return"),
+            TokenKind::Keyword(Keyword::Let) => write!(f, "let"),
+            TokenKind::Constant(constant) => write!(f, "{}", constant),
+            TokenKind::Identifier(iden) => write!(f, "{}", iden),
+            TokenKind::StringLiteral(literal) => write!(f, "{}", literal),
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct Token<'a> {
-    pub ttype: TokenType<'a>,
+    pub kind: TokenKind<'a>,
     pub line: u32,
     pub col: u32,
 }
 
-pub fn tokenize<'a>(code: &'a str) -> Result<Vec<Token<'a>>, String> {
+pub fn tokenize(code: &str) -> Result<Vec<Token>, String> {
     let mut tokens: Vec<Token> = Vec::new();
     let mut lnum = 1;
     let mut cnum = 0;
@@ -40,22 +61,22 @@ pub fn tokenize<'a>(code: &'a str) -> Result<Vec<Token<'a>>, String> {
                 continue;
             }
             Some((_, '(')) => {
-                tokens.push(create_token(TokenType::OParen, lnum, cnum));
+                tokens.push(create_token(TokenKind::OParen, lnum, cnum));
             }
             Some((_, ')')) => {
-                tokens.push(create_token(TokenType::CParen, lnum, cnum));
+                tokens.push(create_token(TokenKind::CParen, lnum, cnum));
             }
             Some((_, '{')) => {
-                tokens.push(create_token(TokenType::OBrace, lnum, cnum));
+                tokens.push(create_token(TokenKind::OBrace, lnum, cnum));
             }
             Some((_, '}')) => {
-                tokens.push(create_token(TokenType::CBrace, lnum, cnum));
+                tokens.push(create_token(TokenKind::CBrace, lnum, cnum));
             }
             Some((_, ';')) => {
-                tokens.push(create_token(TokenType::Semicolon, lnum, cnum));
+                tokens.push(create_token(TokenKind::Semicolon, lnum, cnum));
             }
             Some((_, '=')) => {
-                tokens.push(create_token(TokenType::Equal, lnum, cnum));
+                tokens.push(create_token(TokenKind::Equal, lnum, cnum));
             }
             Some((_, ' ')) | Some((_, '\t')) => {
                 continue;
@@ -88,7 +109,7 @@ pub fn tokenize<'a>(code: &'a str) -> Result<Vec<Token<'a>>, String> {
                     }
                 };
                 tokens.push(create_token(
-                    TokenType::StringLiteral(&code[start + 1..end as usize]),
+                    TokenKind::StringLiteral(&code[start + 1..end as usize]),
                     lnum,
                     i,
                 ));
@@ -113,7 +134,7 @@ pub fn tokenize<'a>(code: &'a str) -> Result<Vec<Token<'a>>, String> {
                     cnum += 1;
                 }
                 tokens.push(create_token(
-                    TokenType::Constant(&code[start..start + (cnum - i) as usize + 1]),
+                    TokenKind::Constant(&code[start..start + (cnum - i) as usize + 1]),
                     lnum,
                     i,
                 ))
@@ -132,18 +153,18 @@ pub fn tokenize<'a>(code: &'a str) -> Result<Vec<Token<'a>>, String> {
 
 fn create_keyword_or_identifier(tok: &str, line: u32, col: u32) -> Token {
     let ttype = match tok {
-        "fn" => TokenType::Keyword(KeywordType::Fn),
-        "let" => TokenType::Keyword(KeywordType::Let),
-        "return" => TokenType::Keyword(KeywordType::Return),
-        _ => TokenType::Identifier(tok),
+        "fn" => TokenKind::Keyword(Keyword::Fn),
+        "let" => TokenKind::Keyword(Keyword::Let),
+        "return" => TokenKind::Keyword(Keyword::Return),
+        _ => TokenKind::Identifier(tok),
     };
 
     create_token(ttype, line, col)
 }
 
-fn create_token(tok_type: TokenType, line: u32, col: u32) -> Token {
+fn create_token(tok_type: TokenKind, line: u32, col: u32) -> Token {
     Token {
-        ttype: tok_type,
+        kind: tok_type,
         line,
         col,
     }

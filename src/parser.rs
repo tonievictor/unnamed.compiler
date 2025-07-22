@@ -1,101 +1,75 @@
-use crate::lexer::{KeywordType, Token, TokenType};
+jse crate::lexer::{Keyword, Token, TokenKind};
 use std::slice::Iter;
 
-pub fn parse(tokens: &mut Iter<Token>) {
+pub fn parse(tokens: Vec<Token>) -> Result<(), String> {
+    let mut tokens = tokens.iter();
+
     while let Some(tok) = tokens.next() {
-        match tok.ttype {
-            TokenType::Keyword(KeywordType::Let) => {
-                match parse_let_statement(tok.clone(), tokens) {
-                    Ok(ltstmt) => println!("{ltstmt:#?}"),
-                    Err(err) => println!("{err}"),
-                }
+        match tok.kind {
+            TokenKind::Keyword(Keyword::Let) => {
+                let stmt = parse_let_stmt(&mut tokens)?;
+                println!("{stmt:?}");
             }
-            TokenType::Keyword(KeywordType::Fn) => {}
-            _ => {}
+            _ => {
+                println!("others");
+                return Ok(());
+            }
         }
+    }
+    Ok(())
+}
+
+pub trait Statement {
+    fn statement(&self) {
+        println!("this is a statement");
     }
 }
 
-#[derive(PartialEq, Clone, Debug)]
-enum Expression {
-    Identifier(String),
-    // StringLiteral(String),
-    IntegerLiteral(u32),
+macro_rules! expect_error {
+    ($expected:expr,$got:expr) => {
+        Err(format!("expected {} but got {}", $expected, $got))
+    };
 }
 
-#[derive(PartialEq, Clone, Debug)]
-struct LetStatement {
-    token: Token,
-    name: Expression,
-    value: Expression,
-}
+pub fn parse_let_stmt<'a>(tokens: &mut Iter<'_, Token<'a>>) -> Result<LetStmt<'a>, String> {
+    let name = expect_identifier(tokens)?;
+    expect_or_err(tokens, TokenKind::Equal)?;
+    // parse expressions
+    expect_or_err(tokens, TokenKind::Semicolon)?;
 
-fn parse_let_statement(
-    curr_token: Token,
-    tokens: &mut Iter<Token>,
-) -> Result<LetStatement, String> {
-    let name = get_and_expect(tokens, TokenType::Identifier)?;
-    get_and_expect(tokens, TokenType::Equal)?;
-    let value = parse_expression(tokens)?;
-    get_and_expect(tokens, TokenType::Semicolon)?;
-
-    Ok(LetStatement {
-        token: curr_token,
-        name: Expression::Identifier(name.literal),
-        value,
+    Ok(LetStmt {
+        kind: Keyword::Let,
+        name,
     })
 }
 
-fn parse_expression(tokens: &mut Iter<Token>) -> Result<Expression, String> {
-    let curr_token = match tokens.next() {
-        Some(t) => t,
-        None => return Err("Expected an expression , but received nothing (None)".to_string()),
-    };
-
-    match curr_token.ttype {
-        TokenType::Constant => parse_integer_expression(curr_token.clone(), tokens),
-        _ => todo!("handle more cases"),
-    }
-}
-
-fn parse_integer_expression(
-    curr_token: Token,
-    tokens: &mut Iter<Token>,
-) -> Result<Expression, String> {
-    match tokens.clone().peekable().peek() {
-        Some(t) => match t.ttype {
-            TokenType::Semicolon => {
-                let num = curr_token
-                    .literal
-                    .parse::<u32>()
-                    .expect("this should always be a valid number");
-                Ok(Expression::IntegerLiteral(num))
-            }
-            _ => todo!("handle more cases"),
-        },
-        None => Err("Expected an expression, but received nothing (None)".to_string()),
-    }
-}
-
-macro_rules! expect_err {
-    ($line:expr, $col:expr, $expect:expr, $got:expr) => {
-        format!(
-            "ERROR {{{},{}}}: expected {:?}, got {:?}",
-            $line, $col, $expect, $got
-        )
-    };
-}
-
-fn get_and_expect(tokens: &mut Iter<Token>, expect: TokenType) -> Result<Token, String> {
+pub fn expect_identifier<'a>(tokens: &mut Iter<'_, Token<'a>>) -> Result<&'a str, String> {
     match tokens.next() {
-        Some(tok) => {
-            if tok.ttype == expect {
-                return Ok(tok.clone());
-            }
-            Err(expect_err!(tok.line, tok.col, expect, tok.ttype))
-        }
-        None => Err(format!(
-            "Expected value {expect:?}, but received nothing (None)",
-        )),
+        Some(tok) => match tok.kind {
+            TokenKind::Identifier(name) => Ok(name),
+            _ => expect_error!(TokenKind::Identifier(""), tok.kind),
+        },
+        None => expect_error!(TokenKind::Identifier(""), "none"),
     }
 }
+pub fn expect_or_err<'a>(
+    tokens: &mut Iter<'_, Token<'a>>,
+    kind: TokenKind<'a>,
+) -> Result<(), String> {
+    match tokens.next() {
+        Some(tok) if tok.kind != kind => expect_error!(TokenKind::Identifier(""), tok.kind),
+        Some(_) => Ok(()),
+        None => expect_error!(TokenKind::Identifier(""), "none"),
+    }
+}
+
+pub enum Expression {}
+
+#[allow(dead_code)]
+#[derive(Debug)]
+pub struct LetStmt<'a> {
+    pub kind: Keyword,
+    pub name: &'a str,
+    // value: Expression,
+}
+

@@ -3,11 +3,12 @@ use std::fs;
 use std::process::exit;
 
 pub mod lexer;
+pub mod parser;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
     if args.len() != 2 {
-        println!("Usage {0} <filename>", &args[0]);
+        println!("Usage {0} <filename.un>", &args[0]);
         exit(1);
     }
 
@@ -27,5 +28,5 @@ fn main() {
         }
     };
 
-    println!("{tokens:#?}")
+    let _ = parser::parse(tokens);
 }
