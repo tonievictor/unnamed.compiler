@@ -33,9 +33,9 @@ impl<'a> Display for TokenKind<'a> {
             TokenKind::Keyword(Keyword::Fn) => write!(f, "fn"),
             TokenKind::Keyword(Keyword::Return) => write!(f, "return"),
             TokenKind::Keyword(Keyword::Let) => write!(f, "let"),
-            TokenKind::Constant(constant) => write!(f, "{}", constant),
-            TokenKind::Identifier(iden) => write!(f, "{}", iden),
-            TokenKind::StringLiteral(literal) => write!(f, "{}", literal),
+            TokenKind::Constant(constant) => write!(f, "{constant}"),
+            TokenKind::Identifier(iden) => write!(f, "{iden}"),
+            TokenKind::StringLiteral(literal) => write!(f, "{literal}"),
         }
     }
 }
