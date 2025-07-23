@@ -14,6 +14,13 @@ pub fn parse(tokens: Vec<Token>) -> Result<(), String> {
                     break;
                 }
             },
+            TokenKind::Keyword(Keyword::Return) => match parse_ret_stmt(&mut tokens) {
+                Ok(stmt) => println!("{stmt:?}"),
+                Err(err) => {
+                    eprintln!("{err}");
+                    break;
+                }
+            },
             _ => {
                 println!("others");
                 return Ok(());
@@ -21,6 +28,22 @@ pub fn parse(tokens: Vec<Token>) -> Result<(), String> {
         }
     }
     Ok(())
+}
+
+fn parse_ret_stmt<'a>(
+    tokens: &mut Peekable<IntoIter<Token<'a>>>,
+) -> Result<ReturnStmt<'a>, String> {
+    expect_or_err(tokens, TokenKind::OParen)?;
+    let value = parse_expr(tokens, TokenKind::CParen)?;
+    expect_or_err(tokens, TokenKind::CParen)?;
+    expect_or_err(tokens, TokenKind::Semicolon)?;
+    Ok(ReturnStmt { value })
+}
+
+#[derive(Debug)]
+#[allow(dead_code)]
+struct ReturnStmt<'a> {
+    value: Expression<'a>,
 }
 
 pub trait Statement {
@@ -49,18 +72,16 @@ macro_rules! unexpected_error {
 
 #[allow(dead_code)]
 #[derive(Debug)]
-pub struct LetStmt<'a> {
-    pub kind: Keyword,
-    pub name: &'a str,
+struct LetStmt<'a> {
+    kind: Keyword,
+    name: &'a str,
     value: Expression<'a>,
 }
 
-pub fn parse_let_stmt<'a>(
-    tokens: &mut Peekable<IntoIter<Token<'a>>>,
-) -> Result<LetStmt<'a>, String> {
+fn parse_let_stmt<'a>(tokens: &mut Peekable<IntoIter<Token<'a>>>) -> Result<LetStmt<'a>, String> {
     let name = expect_identifier(tokens)?;
     expect_or_err(tokens, TokenKind::Equal)?;
-    let value = parse_expr(tokens)?;
+    let value = parse_expr(tokens, TokenKind::Semicolon)?;
     expect_or_err(tokens, TokenKind::Semicolon)?;
 
     Ok(LetStmt {
@@ -70,14 +91,15 @@ pub fn parse_let_stmt<'a>(
     })
 }
 
-pub fn parse_expr<'a>(
+fn parse_expr<'a>(
     tokens: &mut Peekable<IntoIter<Token<'a>>>,
+    delimiter: TokenKind,
 ) -> Result<Expression<'a>, String> {
     match tokens.next() {
         Some(tok) => match tok.kind {
-            TokenKind::Constant(val) => parse_int_expr(val, tokens),
-            TokenKind::StringLiteral(val) => parse_string_expr(val, tokens),
-            TokenKind::Identifier(val) => parse_iden_expr(val, tokens),
+            TokenKind::Constant(val) => parse_int_expr(val, delimiter, tokens),
+            TokenKind::StringLiteral(val) => parse_string_expr(val, delimiter, tokens),
+            TokenKind::Identifier(val) => parse_iden_expr(val, delimiter, tokens),
             kind => Err(format!(
                 "Unsupported expression starting with token: {kind:?}",
             )),
@@ -86,34 +108,37 @@ pub fn parse_expr<'a>(
     }
 }
 
-pub fn parse_string_expr<'a>(
+fn parse_string_expr<'a>(
     val: &'a str,
+    delimiter: TokenKind,
     tokens: &mut Peekable<IntoIter<Token<'a>>>,
 ) -> Result<Expression<'a>, String> {
     match tokens.peek() {
-        Some(tok) if tok.kind == TokenKind::Semicolon => Ok(Expression::StringLiteral(val)),
+        Some(tok) if tok.kind == delimiter => Ok(Expression::StringLiteral(val)),
         Some(tok) => unexpected_error!("string literal", tok),
         None => Err("Unexpected end of input while expecting an expression.".to_string()),
     }
 }
 
-pub fn parse_iden_expr<'a>(
+fn parse_iden_expr<'a>(
     val: &'a str,
+    delimiter: TokenKind,
     tokens: &mut Peekable<IntoIter<Token<'a>>>,
 ) -> Result<Expression<'a>, String> {
     match tokens.peek() {
-        Some(tok) if tok.kind == TokenKind::Semicolon => Ok(Expression::IdentifierLiteral(val)),
+        Some(tok) if tok.kind == delimiter => Ok(Expression::IdentifierLiteral(val)),
         Some(tok) => unexpected_error!("identifier", tok),
         None => Err("Unexpected end of input while expecting an expression.".to_string()),
     }
 }
 
-pub fn parse_int_expr<'a>(
+fn parse_int_expr<'a>(
     val: &'a str,
+    delimiter: TokenKind,
     tokens: &mut Peekable<IntoIter<Token<'a>>>,
 ) -> Result<Expression<'a>, String> {
     match tokens.peek() {
-        Some(tok) if tok.kind == TokenKind::Semicolon => match val.parse::<u32>() {
+        Some(tok) if tok.kind == delimiter => match val.parse::<u32>() {
             Ok(val) => Ok(Expression::IntegerLiteral(val)),
             Err(err) => Err(format!(
                 "Error while parsing integer literal at line {}, column {}: {}",
@@ -132,9 +157,7 @@ pub enum Expression<'a> {
     IdentifierLiteral(&'a str),
 }
 
-pub fn expect_identifier<'a>(
-    tokens: &mut Peekable<IntoIter<Token<'a>>>,
-) -> Result<&'a str, String> {
+fn expect_identifier<'a>(tokens: &mut Peekable<IntoIter<Token<'a>>>) -> Result<&'a str, String> {
     match tokens.next() {
         Some(tok) => match tok.kind {
             TokenKind::Identifier(name) => Ok(name),
@@ -143,7 +166,8 @@ pub fn expect_identifier<'a>(
         None => Err("Unexpected end of input while expecting a token.".to_string()),
     }
 }
-pub fn expect_or_err<'a>(
+
+fn expect_or_err<'a>(
     tokens: &mut Peekable<IntoIter<Token<'a>>>,
     kind: TokenKind<'a>,
 ) -> Result<(), String> {
